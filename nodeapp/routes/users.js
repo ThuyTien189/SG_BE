@@ -1,81 +1,68 @@
 const validateUser = require('../middleware/validateUser')
-
+const connection = require('../../database/connection')
 const express = require('express');
 
 const user_router = express.Router();
 
-const users = [
-	{
-		"id": 1,
-		"fullname": "Nguyen Huy Tuong",
-		"gender": true,
-		"age": 18
-	},
-	{
-		"id": 2,
-		"fullname": "Nguyen Thi Tuong",
-		"gender": false,
-		"age": 15
-	}
-]
-
 // truy xuất, lấy dữ liệu
 user_router.get('/', (req, res) => {
-    res.status(200).json(users);
+    connection.query("SELECT * FROM Users", (err, result) => {
+        if(err) {
+            return res.status(500).send("Error: " + err.message)
+        }
+        else return res.status(200).json(result)
+    })
 });
 
 user_router.get('/:id', (req, res) => {
-    const user = users.find(user => 
-        user.id === parseInt(req.params.id)
-    )
-    if(!user) {
-        res.status(404).json('ID không tồn tại')
-    }
-    res.status(200).json(user);
+    const id = req.params.id
+    connection.query("SELECT * FROM Users WHERE id = ?" , [id], (err, result) => {
+        if(err) {
+            return res.status(500).send("Error: " + err.message)
+        }
+        else return res.status(200).json(result)
+    })
 });
 
 // thêm dữ liệu
 user_router.post('/', validateUser, function(req, res) {
     // console.log(req.body);
-    const user = {
-        id : users[users.length - 1].id + 1,
-        fullname : req.body.fullname,
-        gender : req.body.gender,
-        age : req.body.age
-    }
-    users.push(user);
-    res.status(201).json(users)
+    const {fullname, gender, age} = req.body;
+    connection.query("INSERT INTO Users(fullname, gender, age) VALUES (?, ?, ?)", (err, result) => {
+        if (err) {
+            return res.status(500).send("Error: " + err.message)
+        }
+        else {
+            return res.status(201).send("Success")
+        }
+    })
 })
 
 // sửa dữ liệu
 user_router.put('/:id', validateUser, function(req, res) {
-    const user = users.find(user => 
-        user.id === parseInt(req.params.id)
-    )
-    if(!user) {
-        res.status(404).json('ID không tồn tại')
-    }
-    if(Object.keys(req.body).length !== 0) {
-        user.fullname = req.body.fullname
-        user.gender = req.body.gender
-        user.age = req.body.age
-        res.status(200).json(user)
-    }
-    else {
-        res.status(204).json()
-    }
+    const id = req.params.id;
+    const {fullname, gender, age} = req.body;
+    connection.query("UPDATE Users SET fullname = ?, gender = ?, age = ? WHERE id = ?" , [fullname, gender, age, id], (err, result) => {
+        if (err) {
+            return res.status(500).send("Error: " + err.message)
+        }
+        else {
+            return res.status(204).send("Success")
+        }
+    })
 })
 
 // xóa dữ liệu
 user_router.delete('/:id', function(req, res) {
-    const user = users.find(user => 
-        user.id === parseInt(req.params.id)
-    )
-    if(!user) {
-        res.status(404).json('ID không tồn tại')
-    }
-    users.splice(users.indexOf(user), 1)
-    res.status(204).json()
+    const id = req.params.id;
+    connection.query("DELETE FROM Users WHERE id = ?" , [id], (err, result) => {
+        if (err) {
+            return res.status(500).send("Error: " + err.message)
+        }
+        else {
+            res.status(204).send("Success")
+        }
+    })
 })
 
 // Exports cho biến user_router
