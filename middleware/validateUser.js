@@ -46,28 +46,4 @@ function validateUserRegister(req, res, next) {
     }
     next()
 }
-function validateUserUpdate(req, res, next) {
-    // console.log(req.body)
-    const {username, password, confirmpassword, email, gender, name, age} = req.body
-    if (!minLength(username, 3)) {
-        return res.status(400).send('Invalid username length')
-    }
-    if(!minLength(password, 3)) {
-        return res.status(400).send('Invalid password length')
-    }
-    if(!validEmail(email)) {
-        return res.status(400).send('Invalid email')
-    }
-    if(!checkGender(gender)) {
-        return res.status(400).send('Invalid type of gender')
-    }
-    if(!minLength(name, 2)) {
-        return res.status(400).send('Invalid name length')
-    }
-    if(!isNumber(age)) {
-        return res.status(400).send('Invalid age')
-    }
-    next()
-}
-
-module.exports = {validateUserRegister, validateUserUpdate}
+module.exports = {validateUserRegister}

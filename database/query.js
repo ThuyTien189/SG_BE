@@ -1,36 +1,42 @@
-const executeQuery = ( { db, query, params }) => {
+const executeQuery = ({ db, query }) => {
     return new Promise((resolve, reject) => {
-        db.query(query, params, (err, rows) => {
-            if(err) return reject(err)
-            resolve(rows)
+      db.raw(query)
+        .then(rows => {
+          resolve(rows[0]);
+        })
+        .catch(error => {
+          reject(error);
         });
     });
-};
-
-const getOne = async ( { db, query, params}) => {
-    const records = await executeQuery({ db, query, params } );
-    if(records.length > 0 ) {
-        return records[0]
+  };
+  
+  const getOne = async ({ db, query }) => {
+    const records = await executeQuery({ db, query })
+    if (records.length > 0) {
+      return records[0]
     }
-    return null;
-}
-const create = async ( { db, query, params } ) => {
-    const result = await executeQuery({ db, query, params });
-    if(result.affectedRows > 0) {
-        return true;
+    return false
+  }
+  const create = async ({ db, query }) => {
+    const result = await executeQuery({ db, query });
+    if (result.affectedRows > 0) {
+      return true;
     }
+  
     return false;
-}
-const update = async ( { db, query, params } ) => {
-    const result = await executeQuery({ db, query, params });
-    if(result.affectedRows > 0) {
-        return true;
+  };
+  
+  const update = async ({ db, query }) => {
+    const result = await executeQuery({ db, query })
+    if ( result.affectedRows > 0) {
+      return true
     }
-    return false;
-}
-module.exports = {
+    return false
+  }
+  
+  module.exports = {
+    executeQuery,
     getOne,
     create,
-    update,
-    executeQuery
-}
+    update
+  }

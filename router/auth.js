@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const jsonwebtoken = require('jsonwebtoken');
-const {validateUserRegister, validateUserUpdate} = require('../middleware/validateUser')
+const { validateUserRegister } = require('../middleware/validateUser')
 const validateRequest = require('../middleware/validateRequest')
 const db = require('../database/connection')
 const {getOne, create, update} = require('../database/query')
@@ -15,50 +15,32 @@ const SECRET = "secret"
 // REGISTER
 router.post('/register', validateRequest, validateUserRegister, async (req, res) => {
     const {
-        username,
-        password, 
-        name, 
-        age, 
-        gender,
-        email
-    } = req.body
+        hashedPassword,
+        salt
+    } = hashPassword(req.body.password)
+    const user = {
+        username: req.body.username,
+        password: hashedPassword,
+        email: req.body.email,
+        gender: req.body.gender,
+        name: req.body.name,
+        age: req.body.age,
+        salt: salt,
+        createAt: new Date(Date.now()),
+        isAdmin: req.body.isAdmin
+    }
     // console.log(username, password);
     // check if user with username already existed
-    const isUserExisted = await getOne( {
-        db,
-        query: 'SELECT * FROM users WHERE username = ?',
-        params: username
-    })
+    const isUserExisted = await db.select().from('users').where('username', req.body.username).first()
     if(isUserExisted) {
         return res.status(400).json( {
             message: 'Username already exists'
         })
     }
-    const {
-        hashedPassword,
-        salt
-    } = hashPassword(password)
     // console.log(hashedPassword);
-    const isUserCreated = await create( {
-        db,
-        query: 'INSERT INTO users (username, password, salt, name, email, age, gender) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        params: [
-            username,
-            hashedPassword,
-            salt,
-            name,
-            email,
-            age,
-            gender,
-        ]
-    })
-    if(isUserCreated) {
-        return res.status(200).json({
-            message: 'Register successfully'
-        })
-    }
-    return res.status(500).json({
-        message: 'Internal server error'
+    await db.insert(user).into('users')
+    return res.status(200).json({
+        message: 'Register successfully'
     })
 })
 
@@ -70,11 +52,7 @@ router.post('/login', validateRequest, async function (req, res) {
         password, 
     } = req.body
     // Check if user exists
-    const isUserExisted = await getOne( {
-        db,
-        query: 'SELECT * FROM users WHERE username = ?',
-        params: username
-    })
+    const isUserExisted = await db.select('*').from('users').where('username', username).first()
     if(!isUserExisted) {
         return res.status(400).json( {
             message: 'User not found',
@@ -88,11 +66,9 @@ router.post('/login', validateRequest, async function (req, res) {
             const jwt = jsonwebtoken.sign({
                 id: isUserExisted.id,
                 username: isUserExisted.username,
-                password: isUserExisted.password, 
                 name: isUserExisted.name, 
-                age: isUserExisted.age, 
-                gender: isUserExisted.gender,
-                email: isUserExisted.email
+                email: isUserExisted.email,
+                isAdmin: isUserExisted.isAdmin
             }, SECRET, {
                 algorithm: 'HS256',
                 expiresIn: '1h',
