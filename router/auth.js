@@ -6,7 +6,7 @@ const validateRequest = require('../middleware/validateRequest')
 const db = require('../database/connection')
 const {getOne, create, update} = require('../database/query')
 const {hashPassword, hashPasswordWithSalt} = require('../helpers/hash')
-const {mailService} = require('../../services/mail.service');
+const {mailService} = require('../services/mail.service');
 
 const router = express.Router()
 
